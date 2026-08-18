@@ -37,6 +37,14 @@ POLICY_VISIBLE_COLUMNS = (
     "confirmed_control_error",
 )
 
+RISK_CELL_COLUMNS = (
+    "entity",
+    "reporting_period",
+    "workflow",
+    "account",
+    "counterparty",
+)
+
 SCENARIO_ONLY_COLUMNS = (
     "scenario_id",
     "scenario_type",

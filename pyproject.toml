@@ -5,7 +5,7 @@ build-backend = "setuptools.build_meta"
 [project]
 name = "mcab-authority-budget-prototype"
 version = "0.1.0"
-description = "Synthetic evaluation harness comparing fixed controls with a materiality-calibrated authority budget"
+description = "Synthetic evaluation harness separating cumulative state, entity calibration, and authority-budget tightening"
 readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"

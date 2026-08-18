@@ -1,3 +1,5 @@
 policy,transactions_n,oracle_escalations_n,consequential_failures_n,overall_failure_numerator,overall_failure_denominator,overall_failure_incidence_pct,conditional_miss_numerator,conditional_miss_denominator,conditional_miss_rate_pct,unauthorised_economic_exposure,independent_review_n,independent_review_denominator,independent_review_pct,block_n,block_denominator,block_pct,non_autonomous_intervention_n,non_autonomous_intervention_denominator,non_autonomous_intervention_pct,false_escalations_n,false_escalation_denominator,false_escalation_rate_pct,aggregation_failures_n,qualitative_override_cases_n,qualitative_correctly_escalated_n,qualitative_correctly_escalated_pct
-fixed,240,43,22,22,240,9.166667,22,43,51.162791,167900.000000,15,240,6.250000,6,240,2.500000,21,240,8.750000,0,197,0.000000,22,13,13,100.000000
-mcab,240,43,2,2,240,0.833333,2,43,4.651163,17100.000000,35,240,14.583333,6,240,2.500000,41,240,17.083333,0,197,0.000000,2,13,13,100.000000
+fixed,270,84,54,54,270,20.000000,54,84,64.285714,485975.000000,21,270,7.777778,9,270,3.333333,30,270,11.111111,0,186,0.000000,54,18,18,100.000000
+uniform_cap,270,84,25,25,270,9.259259,25,84,29.761905,122725.000000,55,270,20.370370,9,270,3.333333,64,270,23.703704,5,186,2.688172,25,18,18,100.000000
+mcab_no_tightening,270,84,22,22,270,8.148148,22,84,26.190476,410650.000000,53,270,19.629630,9,270,3.333333,62,270,22.962963,0,186,0.000000,18,18,18,100.000000
+mcab_full,270,84,10,10,270,3.703704,10,84,11.904762,317550.000000,65,270,24.074074,9,270,3.333333,74,270,27.407407,0,186,0.000000,6,18,18,100.000000

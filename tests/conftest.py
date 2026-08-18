@@ -15,6 +15,7 @@ def policy_frame(
     entities: Sequence[str] | None = None,
     workflows: Sequence[str] | None = None,
     accounts: Sequence[str] | None = None,
+    counterparties: Sequence[str] | None = None,
     periods: Sequence[str] | None = None,
 ) -> pd.DataFrame:
     """Build the policy-visible interface with controlled state keys."""
@@ -22,9 +23,10 @@ def policy_frame(
     count = len(amounts)
     flags = flags or [QualitativeFlag.NONE.value] * count
     errors = errors or [False] * count
-    entities = entities or ["ENTITY_TEST"] * count
+    entities = entities or ["ENTITY_REFERENCE"] * count
     workflows = workflows or ["procure_to_pay"] * count
     accounts = accounts or ["test_account"] * count
+    counterparties = counterparties or ["SYNTH_TEST"] * count
     periods = periods or ["2026-07"] * count
     rows = []
     for index, amount in enumerate(amounts):
@@ -35,7 +37,7 @@ def policy_frame(
             "entity": entities[index],
             "account": accounts[index],
             "transaction_type": "test_transaction",
-            "counterparty": "SYNTH_TEST",
+            "counterparty": counterparties[index],
             "reporting_period": periods[index],
             "amount": amount,
             "qualitative_flag": flags[index],

@@ -1,154 +1,121 @@
-# MCAB prototype research specification
+# Public research design
 
-## Status and source
+## Purpose and claim boundary
 
-No PhD proposal file was present in the repository at Gate 1. This document therefore distils only the non-personal methodological requirements supplied in the project brief. It does not reproduce a proposal and must not be treated as professional accounting or auditing guidance.
+This repository is a deterministic synthetic demonstration of four operational-authority policies. It separates cumulative state, entity-relative calibration, and prospective post-error tightening. The experiment is a feasibility and research-engineering demonstration; it is not professional guidance, an audit-standard formula, an empirical validation of MCAB, or a causal-effect estimate.
 
-## Research purpose
+Financial-statement materiality concerns the significance of information or misstatement to users of financial statements. Operational authority concerns how much economic value an AI agent may exercise without independent review. MCAB uses illustrative entity-level materiality anchors to calibrate operational authority budgets, without treating those anchors or safety factors as prescribed approval limits.
 
-The prototype asks whether a stateful, aggregation-aware authority budget can expose a weakness in a fixed per-transaction control: individually small transactions can remain below a monetary threshold while producing consequential cumulative exposure. The comparison is a deterministic synthetic demonstration, not a validation of MCAB or a causal-effect estimate.
+## Frozen entity design
 
-Financial-statement materiality concerns the significance of misstatement to users of financial statements. Operational authority concerns how much cumulative economic value an AI agent may exercise without independent review. MCAB uses a provisional reporting-materiality amount only as an anchor from which an illustrative operational authority budget is derived; it is not an ASA 320 formula or prescribed threshold.
+| Entity | Illustrative anchor | Scale factor | Initial MCAB budget at 0.10 |
+|---|---:|---:|---:|
+| `ENTITY_SMALL` | A$250,000 | 0.5 | A$25,000 |
+| `ENTITY_REFERENCE` | A$500,000 | 1.0 | A$50,000 |
+| `ENTITY_LARGE` | A$1,000,000 | 2.0 | A$100,000 |
 
-## Ordered synthetic data
+The common safety factor is `0.10`. The uniform cumulative cap is A$50,000 and is matched to `ENTITY_REFERENCE`. Proportional entity scaling is a constructive design choice for this authored experiment, not an empirical estimate of organisational scale.
 
-The main dataset will contain 240 positive-amount transactions and use seed `20260818`. Names will be neutral synthetic identifiers. `amount` will represent gross economic magnitude so exposure is not reduced by debit/credit netting.
+## Policy conditions
 
-| Field | Type | Purpose |
-| --- | --- | --- |
-| `transaction_id` | string | Stable synthetic identifier |
-| `sequence_number` | integer | Global processing order |
-| `workflow` | string | `procure_to_pay` or `journal_entry_month_end_close` |
-| `entity` | string | Synthetic entity identifier |
-| `account` | string | Synthetic account/risk-cell component |
-| `transaction_type` | string | Invoice, payment, accrual, adjustment, or similar type |
-| `counterparty` | string | Synthetic counterparty or `INTERNAL` |
-| `reporting_period` | string | Synthetic monthly reporting period |
-| `amount` | number | Positive gross economic magnitude |
-| `qualitative_flag` | string | Observable qualitative risk flag or `none` |
-| `reversible` | boolean | Whether a compensating reversal is feasible in the vignette |
-| `confirmed_control_error` | boolean | Exogenous confirmed-error signal, applied prospectively by MCAB |
-| `scenario_id` | string | Synthetic vignette identifier |
-| `scenario_type` | string | Scenario family used only for generation and evaluation slicing |
-| `scenario_step` | integer | Position within a scripted scenario |
-| `oracle_required_action` | string | Independently adjudicated expected response |
+| Condition | Cumulative state | Entity calibration | Error tightening | Monetary rule |
+|---|---:|---:|---:|---|
+| Fixed threshold | No | No | No | A$50,000 per transaction |
+| Uniform cumulative cap | Yes | No | No | A$50,000 per risk cell |
+| MCAB no tightening | Yes | Yes | No | Entity anchor × 0.10; multiplier `1.00` |
+| Full MCAB | Yes | Yes | Yes | Entity anchor × 0.10; multiplier `0.50` after confirmed error |
 
-The policy interfaces will consume only operational fields. They will not use `scenario_id`, `scenario_type`, `scenario_step`, or `oracle_required_action` to decide an action.
+The cumulative risk cell is `(entity, reporting_period, workflow, account, counterparty)`. Exact equality remains within authority. Projected use strictly above the applicable ceiling requires independent review. Only `AUTO_EXECUTE` amounts consume cumulative autonomous authority; reviewed and blocked amounts do not. No within-period replenishment is modelled.
 
-## Decision vocabulary
+The confirmed-error signal means an earlier control error was confirmed immediately before the signal position. Full MCAB decides the signal row under the prior state and tightens only later rows in the affected `(entity, workflow)` scope. Prior utilisation is retained. The other three conditions have no tightening mechanism.
 
-- `AUTO_EXECUTE`: autonomous processing is permitted.
-- `INDEPENDENT_REVIEW`: independent human review is required before execution.
-- `BLOCK`: execution is stopped pending resolution.
+## Frozen qualitative mappings
 
-## Comparator: fixed threshold
+All policies receive the same qualitative flags and treatment-side mapping. The oracle contains a separately authored copy.
 
-The illustrative default per-transaction threshold is AUD 50,000. This value is a research parameter, not professional guidance.
-
-The fixed policy will validate the row, apply the common qualitative override, route an unflagged amount strictly greater than AUD 50,000 to independent review, and otherwise permit autonomous execution. It will hold no cumulative state. An amount exactly equal to the threshold is permitted unless a qualitative override applies; boundary behaviour will be tested explicitly.
-
-## Treatment: MCAB
-
-The illustrative default provisional reporting-materiality anchor is A$500,000 and the safety factor is 0.10, giving an initial A$50,000 authority budget for each `(entity, reporting_period, workflow, account)` risk cell. Entity is included to prevent exposure in one synthetic entity from consuming another entity's budget. Workflow is also included because account labels may overlap across workflows. Parameters will live in an immutable configuration object and will be labelled illustrative.
-
-For each ordered transaction, MCAB will:
-
-1. validate the row and apply exactly the same qualitative override used by the fixed comparator;
-2. determine the currently effective budget for the transaction's risk cell;
-3. compare the transaction's gross amount with the remaining autonomous budget;
-4. permit and accumulate the amount when projected autonomous utilisation is exactly equal to or less than the budget; projected usage strictly above the budget requires independent review;
-5. record a transparent route, cell, budget, utilisation, and tightening state; and
-6. after processing a row marked as a confirmed control error, apply a 0.50 multiplier to budgets for later transactions in the same `(entity, workflow)` scope.
-
-The confirmed-error signal means that an earlier control error has been confirmed immediately before that sequence position. The row at that position is decided under the state that existed before tightening. After that decision, the multiplier changes the effective ceiling for later decisions only. It does not retrospectively alter any earlier decision. Tightening retains prior cumulative utilisation rather than resetting it and remains active for subsequent transactions in the affected `(entity, workflow)` scope for the remainder of the demonstration. Independent-review and blocked amounts do not consume autonomous authority because the budget measures authority exercised without independent review. No within-period replenishment is assumed in the minimum viable design.
-
-The fixed comparator uses the same boundary convention: exact equality remains within authority, while an amount strictly above its threshold requires escalation. Only MCAB maintains utilisation state.
-
-## Common qualitative overrides
-
-Both policies will share one treatment-side override function and receive identical flags:
-
-| Qualitative flag | Policy action |
-| --- | --- |
+| Flag | Action |
+|---|---|
 | `related_party_activity` | `INDEPENDENT_REVIEW` |
 | `vendor_bank_detail_change` | `BLOCK` |
 | `unusual_non_standard_journal` | `INDEPENDENT_REVIEW` |
 | `management_override_indicator` | `BLOCK` |
 | `period_end_adjustment` | `INDEPENDENT_REVIEW` |
-| `none` | no override |
 
-These responses are synthetic design choices, not claims about universally appropriate professional treatment.
+These mappings were frozen before the revised experiment run and remain synthetic design choices.
 
-## Independent adjudication oracle
+## Synthetic transactions
 
-The oracle is an expected-control-action oracle for the synthetic vignettes. It will assign `AUTO_EXECUTE`, `INDEPENDENT_REVIEW`, or `BLOCK` from a separately authored scenario adjudication schedule before either policy runs. It is not a monetary expected-loss model and is not a validated professional-judgement protocol.
+Seed `20260818` generates 270 ordered positive-amount transactions, 90 per entity:
 
-Technical and logical independence will be preserved as follows:
+| Scenario family | Rows | Design role |
+|---|---:|---|
+| Ordinary low risk | 150 | Unique or separated cells outside recurrence mechanisms |
+| Matched pre-error aggregation | 60 | Two ten-row workflow sequences per entity |
+| Qualitative risk | 15 | One case per flag and entity; outside decomposition subsets |
+| Isolated significance | 12 | Frozen original amount values; outside decomposition subsets |
+| Confirmed-error signals | 3 | One per entity; distinct from post-error cells |
+| Post-error accumulation | 30 | One fresh ten-row repeated cell per entity |
 
-- `oracle.py` will not import `policies.py`, policy configuration, threshold values, budget utilisation, or policy outputs.
-- Scripted scenario type and step, not policy decisions, will determine aggregation and post-error oracle actions.
-- The oracle will contain its own explicit qualitative adjudication table rather than calling the treatment-side override helper.
-- The generated dataset will contain the oracle label before evaluation starts.
-- A dedicated policy-visible dataframe will be selected before either policy is called. It will exclude `oracle_required_action`, `scenario_id`, `scenario_type`, and `scenario_step`.
-- Tests will change both fixed and MCAB treatment configurations and verify oracle labels are unchanged, inspect the oracle module's imports to confirm it does not import policy code or configuration, and verify representative oracle vignettes directly.
+Matched aggregation and post-error amounts use reference templates multiplied by entity scale factors `0.5`, `1.0`, and `2.0`. Ordinary and qualitative values are also scaled. Every aggregation transaction remains below A$50,000 individually.
 
-This deliberate separation prevents circular scoring. It does not solve construct validity: expert adjudication remains future work.
+The isolated-significance amount sequence is frozen before revised execution as:
 
-## Scenario design
+`55,000; 62,500; 71,000; 83,000; 95,000; 58,500; 76,000; 88,000; 55,000; 62,500; 71,000; 83,000`.
 
-The 240 rows will be assembled in an explicit global order:
+Every value comes from the original isolated-large vignettes; the first four repeat to provide four cases per revised entity. These cases are not used for mechanism decomposition.
 
-| Scenario | Planned rows | Expected synthetic pattern |
-| --- | ---: | --- |
-| Ordinary low risk | 185 | Small, unflagged transactions spread across entities, periods, and accounts |
-| Aggregation pressure | 20 | Two ten-row sequences of individually sub-threshold values; scenario-step adjudication begins requiring review part-way through each sequence |
-| Qualitative risk | 12 | Low-value examples spanning all five qualitative flags |
-| Isolated large | 8 | Unflagged transactions above the fixed threshold, expected to require review |
-| Confirmed control-error signal | 1 | A severe flagged row expected to be blocked and to tighten later MCAB authority |
-| Post-error accumulation | 14 | Sub-threshold transactions after the signal, with a stricter separately specified oracle schedule |
+## Pattern-based adjudication oracle
 
-Ordinary transactions will use seeded variation. Scripted scenarios will preserve their internal order. The generator will assert the row count, uniqueness, allowed categories, and positive amounts.
+The oracle is implemented separately and contains no fixed threshold, cumulative cap, entity anchor, safety factor, tightening multiplier, policy decision, or policy import.
 
-## Evaluation outcomes
+Frozen rules are:
 
-All metrics will be computed from the same ordered dataset and one joined decision table.
+1. Apply the separate qualitative mapping first.
+2. Route authored isolated-significance vignettes to independent review without a monetary comparison.
+3. Within matched pre-error aggregation risk cells, occurrences 1–5 are `AUTO_EXECUTE`; occurrence 6 onward requires `INDEPENDENT_REVIEW`.
+4. A confirmed-error signal takes effect only after its own adjudication.
+5. Within a fresh post-error repeated cell in the affected entity-workflow scope, occurrences 1–2 are `AUTO_EXECUTE`; occurrence 3 onward requires `INDEPENDENT_REVIEW`.
+6. Ordinary, qualitative, isolated-significance, and signal rows do not contribute to aggregation recurrence counts.
+7. Scenario step and policy monetary values do not determine the recurrence boundary.
 
-### Primary outcomes
+The oracle is procedurally isolated and does not use policy monetary parameters. However, both the oracle and the synthetic scenarios remain authored research-design components and have not been independently expert validated.
 
-1. **Overall consequential failure incidence:** count of rows where the policy returns `AUTO_EXECUTE` while the oracle requires `INDEPENDENT_REVIEW` or `BLOCK`, divided by all evaluated rows.
-2. **Conditional miss rate:** the same false-negative count divided by the number of oracle-required escalation rows.
-3. **Unauthorised economic exposure:** sum of positive gross transaction `amount` associated with missed escalations. This is an authority-exposure proxy, not realised financial loss.
-4. **Intervention burden:** report `INDEPENDENT_REVIEW` and `BLOCK` counts and percentages separately. Their combined count and percentage may be described as non-autonomous intervention burden.
+Policies receive only operational fields. They do not receive scenario identifiers, scenario types, scenario steps, oracle labels, or policy decisions from other conditions.
 
-Every rate will be accompanied by its numerator and denominator.
+## Prespecified mechanism decomposition
 
-### Secondary outcomes
+Mechanism comparisons are calculated only on frozen subsets:
 
-- **False escalation rate:** policy escalations when the oracle says `AUTO_EXECUTE`, divided by all oracle-`AUTO_EXECUTE` rows.
-- **Aggregation-related failures:** consequential failures in `aggregation_pressure` or `post_error_accumulation` scenarios.
-- **Qualitative overrides correctly escalated:** count and percentage of flagged rows for which both oracle and policy require escalation.
-- `INDEPENDENT_REVIEW` and `BLOCK` counts will remain separate in both decision summaries and public reporting.
+| Mechanism | Comparison | Subset |
+|---|---|---|
+| Statefulness | Fixed threshold → Uniform cumulative cap | Matched pre-error aggregation rows |
+| Entity calibration | Uniform cap → MCAB no tightening | Matched pre-error aggregation rows, separately by entity |
+| Prospective tightening | MCAB no tightening → Full MCAB | Post-error rows only |
 
-The chart will be one three-panel bar figure comparing the two policies on control-failure percentage, unauthorised exposure, and review-burden percentage without placing incompatible units on one axis.
+Repository-level metrics are reported separately as descriptive results. Their differences are not interpreted as additive mechanism effects.
 
-## Sensitivity and edge checks
+## Outcomes
 
-Sensitivity reporting will separate three designs:
+Primary outcomes are overall consequential-failure incidence, conditional miss rate, gross authority-exposure proxy, and separate review/block/intervention burdens. Secondary outcomes are false escalation rate, aggregation-related failures, qualitative cases correctly escalated, entity-level results, and full action confusion counts. Every rate includes its numerator and denominator.
 
-1. **Primary matched A$50,000 comparison:** fixed threshold A$50,000 versus MCAB initial budget A$50,000 (`0.10` safety factor), using the default `0.50` post-error multiplier.
-2. **MCAB-only design sensitivity:** hold the fixed comparator at A$50,000 while varying MCAB safety factors `0.05`, `0.10`, and `0.15` and post-error multipliers `0.25`, `0.50`, `0.75`, and `1.00`. Multiplier `1.00` is the no-tightening, aggregation-only MCAB condition.
-3. **Matched-budget sensitivity:** for each safety factor, set the fixed threshold equal to the MCAB initial budget and use the default `0.50` post-error multiplier.
+`INDEPENDENT_REVIEW` is adequate escalation for the binary missed-escalation measure when the oracle requires review or blocking because autonomous authority has been removed. The three-action confusion table retains action-severity differences.
 
-The main ordered dataset remains fixed in every condition. Results will be written programmatically to a sensitivity CSV. Tests will also cover threshold boundary values, cumulative exhaustion, repeated small transactions, an unusually large transaction, empty input, deterministic reproduction, and malformed data.
+## Predeclared sensitivity grids
 
-Sensitivity analysis is descriptive. It will show parameter dependence and policy trade-offs; it will not be used to select a retrospectively optimal result.
+- Fixed thresholds: A$25,000, A$50,000, A$100,000.
+- Uniform caps: A$25,000, A$50,000, A$100,000.
+- MCAB safety factors: `0.05`, `0.10`, `0.15`.
+- Full-MCAB tightening multipliers: `0.25`, `0.50`, `0.75`, `1.00`.
+- Matched-reference comparisons set the uniform cap equal to the reference entity's MCAB budget at each safety factor.
 
-## Principal validity risks
+The oracle labels and dataset remain fixed throughout. Sensitivity results are descriptive and are not used to select a preferred condition retrospectively.
 
-- The oracle is authored synthetic ground truth and may encode the researcher's assumptions.
-- Parameter values, risk-cell granularity, scenario mix, and ordering can materially change results.
-- Observed flags are assumed accurate and costless; detection error is not modelled.
-- Transaction amounts proxy authority exposure, not realised loss or financial-statement misstatement.
-- The simulation omits strategic adaptation, reviewer error, reviewer dependence, processing delay, control cost, and recovery effectiveness.
-- Separate account cells can fragment cross-account exposure; a hierarchy is future work.
-- A deterministic single run supports reproducibility but not sampling inference or external validity.
+## Validity limitations
+
+- The anchors, scale ratios, recurrence counts, scenario composition, and ordering are authored assumptions.
+- Proportional entity scaling and matched scenarios are constructive identification choices, not empirical validation of entity scales or materiality anchors.
+- The oracle is not expert validated and may encode the researcher's control expectations.
+- Cell granularity can fragment exposure that would be consequential at a higher hierarchy.
+- Flags are treated as observed accurately and without cost.
+- Reviewer error, dependence, delay, control cost, strategic adaptation, recovery, and realised financial loss are omitted.
+- One deterministic dataset supports reproducibility but not statistical inference or external validity.

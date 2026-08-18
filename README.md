@@ -1,64 +1,96 @@
 # Materiality-Calibrated Authority Budget prototype
 
-This synthetic research prototype examines a fixed-threshold aggregation problem: individually small transactions can remain below a per-transaction limit while accumulating consequential authority exposure. MCAB is tested here as a stateful design idea that tracks cumulative autonomous authority and prospectively tightens it after a confirmed error. In the authored simulation, MCAB reduces missed escalation and its gross authority-exposure proxy while increasing non-autonomous intervention. The prototype demonstrates an implementable comparison under synthetic assumptions; it does not professionally or empirically validate MCAB.
+[![Tests](https://github.com/skk-dotcom/mcab-authority-budget-prototype/actions/workflows/tests.yml/badge.svg)](https://github.com/skk-dotcom/mcab-authority-budget-prototype/actions/workflows/tests.yml)
 
-**Current evidence:** [generated results summary](outputs/results_summary.md) · [decision-level CSV](outputs/policy_decisions.csv) · [comparison chart](outputs/policy_comparison.png)
+This repository is a synthetic research prototype for examining operational authority controls. It illustrates how repeated transactions can remain individually below a fixed threshold while accumulating within a risk cell, and how a materiality-calibrated authority budget can vary across differently scaled synthetic entities. It does not validate MCAB professionally or empirically.
 
-The results summary is regenerated from the CSV outputs by the demo command and checked against those files by the test suite. Numerical findings are not maintained manually in this README.
+## Research problem
 
-## Primary matched A$50,000 results
+A stateless per-transaction threshold cannot recognise cumulative exposure from repeated small transactions. Adding cumulative state can address that specific weakness, but it does not by itself demonstrate the value of calibrating authority to entity scale. This prototype therefore separates cumulative state, entity-relative calibration, and prospective post-error tightening into four policy conditions.
 
-The following compact table is generated from `outputs/policy_comparison.csv` whenever the demo runs and is validated by the test suite.
+## Financial-statement materiality and operational authority
+
+Financial-statement materiality concerns whether information or misstatement could influence users of financial statements. Operational authority concerns how much economic value an AI agent may exercise without independent review. MCAB uses illustrative materiality anchors to calibrate operational authority budgets. It is not an ASA 320 formula, an auditing standard, a legal approval threshold, or professional guidance.
+
+## MCAB as a research construct
+
+MCAB is defined here as a stateful research design construct that limits cumulative autonomous authority within specified risk cells. Full MCAB can also tighten later budgets after confirmation of an earlier control error. Only autonomously executed amounts consume authority; independently reviewed or blocked amounts do not.
+
+## Synthetic design and entity scales
+
+The deterministic dataset contains 270 positive-amount transactions across procure-to-pay and journal-entry/month-end-close workflows. All identifiers and values are synthetic.
+
+| Entity | Illustrative anchor | Scenario scale | Initial MCAB budget |
+|---|---:|---:|---:|
+| `ENTITY_SMALL` | A$250,000 | 0.5 | A$25,000 |
+| `ENTITY_REFERENCE` | A$500,000 | 1.0 | A$50,000 |
+| `ENTITY_LARGE` | A$1,000,000 | 2.0 | A$100,000 |
+
+The common safety factor is `0.10`. The uniform cumulative cap is A$50,000 and therefore matches MCAB for `ENTITY_REFERENCE`. The cumulative risk cell is `(entity, reporting_period, workflow, account, counterparty)`.
+
+Matched aggregation and post-error amount templates are multiplied by the entity scale factors. Qualitative and isolated-significance cases are kept outside the mechanism-identification subsets. Parameters and templates were frozen before revised execution and were not altered in response to the results.
+
+## Policy conditions and mechanism decomposition
+
+| Condition | Cumulative state | Entity calibration | Prospective tightening |
+|---|---:|---:|---:|
+| Fixed per-transaction threshold | No | No | No |
+| Uniform cumulative cap | Yes | No | No |
+| MCAB no-tightening ablation | Yes | Yes | No |
+| Full MCAB | Yes | Yes | Yes |
+
+The prespecified mechanism comparisons are deliberately narrower than the repository-level comparison:
+
+- fixed threshold → uniform cap uses matched pre-error aggregation rows;
+- uniform cap → MCAB no tightening uses those rows separately for each entity; and
+- MCAB no tightening → full MCAB uses post-error rows only.
+
+Overall metric differences are descriptive and are not presented as additive mechanism effects.
+
+## Independent oracle and remaining dependence
+
+The oracle applies a separately authored qualitative mapping and non-monetary recurrence rules. In matched pre-error aggregation cells, review begins at occurrence six. After a confirmed control error, later transactions in a fresh post-error cell require review from occurrence three. The signal row affects later adjudication only and does not count as a post-error occurrence.
+
+The oracle module imports no policy implementation or configuration and does not use fixed thresholds, cumulative caps, entity anchors, safety factors, tightening multipliers, policy decisions, or scenario-step boundaries. Policies receive no scenario identifiers, scenario labels, steps, or oracle actions.
+
+The oracle is procedurally isolated and does not use policy monetary parameters. However, both the oracle and the synthetic scenarios remain authored research-design components and have not been independently expert validated.
+
+## Evaluation metrics
+
+The primary measures are:
+
+- overall consequential-failure incidence: missed escalations divided by all transactions;
+- conditional miss rate: missed escalations divided by oracle-required escalation transactions;
+- gross authority-exposure proxy: gross amount associated with missed escalations; and
+- review, block, and combined non-autonomous intervention burden.
+
+Secondary outputs include false escalation rate, aggregation-related failures, qualitative cases correctly escalated, three-action confusion counts, results by entity, sensitivity analysis, and prespecified mechanism decomposition. Every rate is accompanied by its numerator and denominator.
+
+`INDEPENDENT_REVIEW` counts as adequate escalation for the binary miss measure when the oracle requires review or blocking because autonomous authority has been removed. Review and block remain separate in the generated tables.
+
+## Illustrative comparison under authored aggregation scenarios
+
+[The complete generated results summary](outputs/results_summary.md) reports all four conditions, entity results, action confusion, and mechanism subsets. The compact table below and the chart use repository-level descriptive results; the no-tightening ablation remains visible in the generated summary and decomposition output.
 
 <!-- BEGIN GENERATED PRIMARY RESULTS -->
 | Policy | Conditional miss rate | Gross authority-exposure proxy | Combined non-autonomous intervention |
 |---|---|---|---|
-| Fixed threshold | 22/43 (51.16%) | A$167,900 | 21/240 (8.75%) |
-| MCAB | 2/43 (4.65%) | A$17,100 | 41/240 (17.08%) |
+| Fixed threshold | 54/84 (64.29%) | A$485,975 | 30/270 (11.11%) |
+| Uniform cumulative cap | 25/84 (29.76%) | A$122,725 | 64/270 (23.70%) |
+| Full MCAB | 10/84 (11.90%) | A$317,550 | 74/270 (27.41%) |
+
+In this authored run, the lowest miss count occurs under Full MCAB, the lowest exposure proxy under Uniform cumulative cap, and the lowest intervention burden under Fixed threshold. These descriptive outcomes do not define a universal policy ranking.
 <!-- END GENERATED PRIMARY RESULTS -->
 
-![Primary synthetic policy comparison](outputs/policy_comparison.png)
+![Descriptive synthetic policy comparison](outputs/policy_comparison.png)
 
-## Research problem
+The table's conditional rate uses only oracle-required escalations as its denominator. The chart's failure-incidence percentage uses all 270 transactions. The values therefore answer different questions and should not be compared as if they shared a denominator.
 
-A fixed per-transaction approval threshold can treat each transaction in isolation. An agent may therefore execute a series of individually small transactions while cumulative exposure becomes consequential across an account, counterparty, workflow, entity, or reporting period.
+## Sensitivity and ablation analysis
 
-Financial-statement materiality concerns whether information or misstatement could influence users of financial statements. Operational authority concerns how much economic value an AI agent may exercise without independent review. MCAB uses a provisional reporting-materiality amount only as an illustrative anchor for an operational authority budget. It is not an ASA 320 formula, an auditing standard, a legal threshold, or professional guidance.
+The generated sensitivity table varies fixed thresholds, uniform cumulative caps, MCAB safety factors, and full-MCAB tightening multipliers over predeclared grids. It also includes matched-reference conditions in which the uniform cap equals the reference entity's MCAB budget. Multiplier `1.00` represents no tightening.
 
-MCAB is defined here as a research design construct that limits cumulative autonomous financial authority within specified risk cells and permits prospective tightening after a confirmed control error.
-
-## Demonstration design
-
-The deterministic synthetic dataset covers procure-to-pay and journal-entry/month-end-close workflows. It contains ordinary activity, repeated sub-threshold sequences, qualitative-risk cases, isolated large transactions, and a later sequence following confirmation of an earlier control error. All entities, accounts, counterparties, periods, and amounts are synthetic.
-
-The policies receive the same ordered transactions and the same qualitative flags:
-
-- **Fixed comparator:** escalates an unflagged transaction only when its amount is strictly above the fixed threshold. It does not retain cumulative exposure.
-- **MCAB treatment:** derives an illustrative initial cell budget from a provisional anchor and safety factor, tracks autonomous utilisation by `(entity, reporting_period, workflow, account)`, and prospectively tightens later budgets in the affected entity-workflow scope after a confirmed error.
-
-Exact equality remains within authority. Only autonomously executed amounts consume MCAB authority; reviewed or blocked amounts do not. Tightening retains existing utilisation, affects later decisions only, and remains active for the rest of the demonstration.
-
-All policy values are configurable research parameters. They were selected to make the treatment logic inspectable, not to recommend professional approval limits.
-
-## Independent adjudication oracle
-
-The oracle is a separately implemented expected-control-action schedule for the authored synthetic vignettes. It does not import either policy, consult policy configuration, or observe policy decisions. Policies are passed only operational columns; oracle labels and scenario-only metadata are excluded from their data interface. Tests verify that oracle labels remain unchanged when either policy configuration changes.
-
-In each original aggregation sequence, the independently specified oracle begins requiring escalation one transaction before the default MCAB budget is exceeded. That rule was fixed independently of policy execution. The residual MCAB misses therefore arise from a difference between the oracle's conservative escalation schedule and MCAB's budget-exhaustion rule, not from changed oracle labels. The oracle remains simplified synthetic ground truth rather than a validated professional-judgement protocol.
-
-For the consequential-failure measures, `INDEPENDENT_REVIEW` counts as adequate escalation when the oracle requires either review or blocking: autonomous authority has been removed and the reviewer can subsequently block execution. Review and block counts remain separate, and [the generated confusion table](outputs/action_confusion.csv) preserves action-severity differences.
-
-## Outcomes
-
-The evaluator reports:
-
-- overall consequential failure incidence: missed escalations divided by all transactions;
-- conditional miss rate: missed escalations divided by oracle-required escalations;
-- unauthorised economic exposure: gross transaction amount associated with missed escalations, used only as an authority-exposure proxy;
-- independent-review, block, and combined non-autonomous intervention burden;
-- false escalation rate, aggregation-related failures, and qualitative overrides correctly escalated.
-
-Every rate is accompanied by its numerator and denominator. The [generated results summary](outputs/results_summary.md) also explains the qualitative-case denominator and the sparse fixed-policy support between the lower matched-budget thresholds.
+Sensitivity analysis is descriptive. It is not used to select a preferred result after observing the experiment.
 
 ## Installation and reproduction
 
@@ -84,74 +116,29 @@ python3 -m venv .venv
 .venv/bin/python -m mcab_prototype.run_demo
 ```
 
-The final command regenerates:
-
-- `data/synthetic_transactions.csv`;
-- `outputs/policy_decisions.csv`;
-- `outputs/policy_comparison.csv`;
-- `outputs/action_confusion.csv`;
-- `outputs/sensitivity_analysis.csv`;
-- `outputs/results_summary.md`; and
-- `outputs/policy_comparison.png`.
-
-## Interpretation
-
-The current run illustrates a trade-off. In this authored simulation, cumulative authority tracking reduces aggregation-related missed escalations and their associated exposure proxy while increasing non-autonomous intervention. Sensitivity results show that this comparison depends materially on the initial budget and post-error multiplier; more restrictive settings can introduce false escalations without a corresponding reduction in misses.
-
-These simulated results demonstrate that the proposed construct can be implemented, tested, and compared under explicit assumptions. They do not validate MCAB, establish causal effectiveness, show universal superiority, measure realised financial loss, or determine a professionally appropriate threshold.
+The demo regenerates the synthetic dataset, decision-level policy output, repository- and entity-level metrics, mechanism decomposition, sensitivity table, action confusion table, generated Markdown summary, README results block, and chart.
 
 ## Limitations
 
-- The adjudication oracle is authored synthetic ground truth and has not been expert validated.
-- Scenario composition, ordering, parameter values, and risk-cell granularity influence the results.
-- The fixed-policy sensitivity has sparse transaction support between its lower matched thresholds, as quantified in the generated summary.
+- The oracle and synthetic scenarios are authored and have not been independently expert validated.
+- Entity anchors, the safety factor, recurrence counts, cell granularity, scenario order, and sensitivity grids are illustrative choices.
+- Proportional entity scaling and authored matched scenarios are constructive design choices. The calibration comparison illustrates policy behaviour under this design and does not empirically validate the selected anchors or scale ratios.
+- Isolated-significance judgements remain authored and are excluded from mechanism decomposition.
+- The frozen dataset has no individual amounts above A$25,000 and at or below A$50,000, so the fixed-threshold sensitivity has sparse support in that interval.
 - Qualitative flags are assumed to be observed accurately and without cost.
 - Gross transaction amount represents authority exposure, not realised loss or financial-statement misstatement.
-- Strategic adaptation, reviewer error and dependence, processing delay, recovery effectiveness, and control operating cost are omitted.
-- Account-level cells can fragment exposure that might be consequential at a higher hierarchy.
-- A single deterministic dataset supports reproducibility, not statistical inference or external validity.
-- The proposal itself was unavailable in the project sources, so exact proposal section numbering requires human verification.
-
-## Proposal-to-prototype mapping
-
-| Proposal topic | Prototype evidence |
-|---|---|
-| Fixed-threshold aggregation weakness | Scripted accumulation scenarios in `generate_data.py` and decision-level outputs |
-| MCAB research construct | Configurable state transition and authority cells in `policies.py` |
-| Independent expected-action adjudication | Isolated `oracle.py`, restricted policy interface, and direct independence tests |
-| Comparative evaluation design | Common evaluator, primary outcomes, sensitivities, confusion table, and chart |
-| Reproducibility and research engineering | Fixed seed, generated artifacts, package metadata, tests, and AI-use disclosure |
-| §7.2 implementation evidence | Executable local harness and generated evidence suitable for linkage once public |
-| Limitations and future validation | Explicit limitations here and proposed research extensions below |
-
-Only §7.2 was identified in the supplied instructions. The human researcher should verify other section references against the final proposal before publication.
+- Reviewer error and dependence, strategic adaptation, delay, operating cost, containment, recovery, and realised outcomes are omitted.
+- One deterministic dataset supports reproducibility, not statistical inference, causal attribution, external validity, or generalisation to real organisations or autonomous agents.
+- A committed PNG may render differently across operating systems because the complete font and rendering stack is not pinned; tests validate source values and rendering structure instead of cross-platform byte identity.
 
 ## Future research
 
-Proposed extensions include:
-
-- a confidence-based escalation baseline;
-- multiple model and reviewer-independence conditions;
-- repeated stochastic agent runs;
-- expert-validated adjudication; and
-- hierarchical statistical analysis across transactions, cells, workflows, agents, and reviewers.
+Proposed extensions include a confidence-based escalation baseline, multiple model and reviewer-independence conditions, repeated stochastic agent runs, expert-validated adjudication, and hierarchical statistical analysis across transactions, cells, workflows, agents, and reviewers.
 
 ## AI-assisted research engineering
 
-Development responsibilities and validation procedures are disclosed in [AI_USE.md](AI_USE.md). The work is described as human-directed, AI-assisted research engineering; responsibility for the research claims and interpretation remains with the human researcher.
-
-## Publication metadata
-
-Suggested repository description:
-
-> Reproducible synthetic Python evaluation harness comparing fixed transaction controls with a materiality-calibrated cumulative authority budget.
-
-Suggested GitHub topics: `accounting-information-systems`, `auditing-research`, `internal-controls`, `ai-governance`, `reproducible-research`, `synthetic-data`, `python`, `pytest`.
-
-Suggested sentence for proposal §7.2:
-
-> An executable, human-directed, AI-assisted prototype of the MCAB evaluation harness, including synthetic data, independent adjudication, comparator policies, tests and generated outputs, is available at [GITHUB URL].
+Development responsibilities and validation procedures are disclosed in [AI_USE.md](AI_USE.md). This repository is a human-directed, AI-assisted implementation; responsibility for assumptions, interpretation, and scholarly use remains with the human researcher.
 
 ## Licence
 
-Released under the [MIT License](LICENSE). This prototype is research software and carries no professional assurance or accounting guidance.
+Released under the [MIT License](LICENSE). This research software provides no professional assurance or accounting guidance.

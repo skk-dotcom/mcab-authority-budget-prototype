@@ -5,7 +5,9 @@ from pathlib import Path
 from .evaluate import (
     action_confusion,
     apply_policies,
+    compare_policies_by_entity,
     compare_policies,
+    mechanism_decomposition,
     save_comparison_chart,
     sensitivity_analysis,
     write_and_validate_results_summary,
@@ -25,20 +27,27 @@ def run_demo(root: Path = REPOSITORY_ROOT) -> tuple[Path, Path]:
     transactions = generate_transactions(DEFAULT_SEED)
     decisions = apply_policies(transactions)
     metrics = compare_policies(decisions)
+    entity_metrics = compare_policies_by_entity(decisions)
+    decomposition = mechanism_decomposition(decisions)
     sensitivity = sensitivity_analysis(transactions)
     confusion = action_confusion(decisions)
     csv_options = {"index": False, "float_format": "%.6f", "lineterminator": "\n"}
     transactions.to_csv(data_dir / "synthetic_transactions.csv", **csv_options)
     decisions.to_csv(output_dir / "policy_decisions.csv", **csv_options)
     metrics.to_csv(output_dir / "policy_comparison.csv", **csv_options)
+    entity_metrics.to_csv(output_dir / "policy_entity_comparison.csv", **csv_options)
+    decomposition.to_csv(output_dir / "mechanism_decomposition.csv", **csv_options)
     sensitivity.to_csv(output_dir / "sensitivity_analysis.csv", **csv_options)
     confusion_path = output_dir / "action_confusion.csv"
     confusion.to_csv(confusion_path, **csv_options)
     chart_path = output_dir / "policy_comparison.png"
     save_comparison_chart(metrics, chart_path)
     write_and_validate_results_summary(
-        output_dir / "policy_decisions.csv", output_dir / "policy_comparison.csv",
-        output_dir / "sensitivity_analysis.csv", confusion_path,
+        output_dir / "policy_decisions.csv",
+        output_dir / "policy_comparison.csv",
+        output_dir / "policy_entity_comparison.csv",
+        output_dir / "mechanism_decomposition.csv",
+        confusion_path,
         output_dir / "results_summary.md",
     )
     write_and_validate_readme_results(root / "README.md", output_dir / "policy_comparison.csv")

@@ -1,54 +1,99 @@
-"""Fixed-threshold comparator and stateful MCAB treatment."""
+"""Transparent fixed, cumulative-cap, and MCAB policy conditions."""
 
+from collections.abc import Callable
 from dataclasses import dataclass
 from math import isfinite
+from types import MappingProxyType
 from typing import Mapping
 
 import pandas as pd
 
-from .domain import Action, DECISION_COLUMNS, POLICY_VISIBLE_COLUMNS, SCENARIO_ONLY_COLUMNS, QualitativeFlag
+from .domain import (
+    Action,
+    DECISION_COLUMNS,
+    POLICY_VISIBLE_COLUMNS,
+    RISK_CELL_COLUMNS,
+    SCENARIO_ONLY_COLUMNS,
+    QualitativeFlag,
+)
 
 
-POLICY_FLAG_ACTIONS: Mapping[str, Action] = {
+# Frozen treatment-side mappings shared by every policy condition.
+POLICY_FLAG_ACTIONS: Mapping[str, Action] = MappingProxyType({
     QualitativeFlag.RELATED_PARTY.value: Action.INDEPENDENT_REVIEW,
     QualitativeFlag.BANK_CHANGE.value: Action.BLOCK,
     QualitativeFlag.NON_STANDARD_JOURNAL.value: Action.INDEPENDENT_REVIEW,
     QualitativeFlag.MANAGEMENT_OVERRIDE.value: Action.BLOCK,
     QualitativeFlag.PERIOD_END.value: Action.INDEPENDENT_REVIEW,
-}
+})
+
+DEFAULT_ENTITY_ANCHORS: tuple[tuple[str, float], ...] = (
+    ("ENTITY_SMALL", 250_000.0),
+    ("ENTITY_REFERENCE", 500_000.0),
+    ("ENTITY_LARGE", 1_000_000.0),
+)
+
+
+def _positive_finite(value: float, label: str) -> None:
+    if not isfinite(value) or value <= 0:
+        raise ValueError(f"{label} must be finite and positive")
 
 
 @dataclass(frozen=True)
 class FixedPolicyConfig:
-    """Illustrative fixed comparator settings."""
+    """Illustrative stateless comparator settings."""
 
     threshold: float = 50_000.0
 
     def __post_init__(self) -> None:
-        if not isfinite(self.threshold) or self.threshold <= 0:
-            raise ValueError("Fixed threshold must be finite and positive")
+        _positive_finite(self.threshold, "Fixed threshold")
+
+
+@dataclass(frozen=True)
+class CumulativeCapConfig:
+    """Uniform cumulative-cap settings with no materiality calibration."""
+
+    cap: float = 50_000.0
+
+    def __post_init__(self) -> None:
+        _positive_finite(self.cap, "Uniform cumulative cap")
 
 
 @dataclass(frozen=True)
 class MCABConfig:
-    """Illustrative MCAB research parameters, not prescribed values."""
+    """Illustrative entity-relative MCAB parameters, not prescribed values."""
 
-    materiality_anchor: float = 500_000.0
+    entity_anchors: tuple[tuple[str, float], ...] = DEFAULT_ENTITY_ANCHORS
     safety_factor: float = 0.10
     post_error_multiplier: float = 0.50
 
     def __post_init__(self) -> None:
-        values = (self.materiality_anchor, self.safety_factor, self.post_error_multiplier)
-        if not all(isfinite(value) and value > 0 for value in values):
-            raise ValueError("MCAB parameters must be finite and positive")
+        _positive_finite(self.safety_factor, "MCAB safety factor")
+        _positive_finite(self.post_error_multiplier, "Post-error multiplier")
         if self.post_error_multiplier > 1:
             raise ValueError("Post-error multiplier cannot exceed 1.00")
+        anchors = dict(self.entity_anchors)
+        if len(anchors) != len(self.entity_anchors) or not anchors:
+            raise ValueError("MCAB entity anchors must be unique and non-empty")
+        for entity, anchor in anchors.items():
+            if not entity:
+                raise ValueError("MCAB entity identifiers cannot be empty")
+            _positive_finite(float(anchor), f"MCAB anchor for {entity}")
 
     @property
-    def initial_budget(self) -> float:
-        """Return the initial authority ceiling for each risk cell."""
+    def anchor_map(self) -> dict[str, float]:
+        """Return a defensive entity-to-anchor mapping."""
 
-        return self.materiality_anchor * self.safety_factor
+        return dict(self.entity_anchors)
+
+    def initial_budget_for(self, entity: str) -> float:
+        """Return the initial authority ceiling for one synthetic entity."""
+
+        try:
+            anchor = self.anchor_map[entity]
+        except KeyError as exc:
+            raise ValueError(f"No MCAB materiality anchor configured for entity {entity!r}") from exc
+        return anchor * self.safety_factor
 
 
 def _validate_policy_input(transactions: pd.DataFrame) -> None:
@@ -71,13 +116,17 @@ def _validate_policy_input(transactions: pd.DataFrame) -> None:
 
 
 def _qualitative_override(flag: str) -> Action | None:
-    """Return the common treatment-side qualitative override."""
+    """Return the frozen treatment-side qualitative override."""
 
     return POLICY_FLAG_ACTIONS.get(flag)
 
 
+def _risk_cell(row: Mapping[str, object]) -> tuple[str, ...]:
+    return tuple(str(row[column]) for column in RISK_CELL_COLUMNS)
+
+
 class FixedThresholdPolicy:
-    """Transparent comparator with no exposure state."""
+    """Transparent comparator with no cumulative exposure state."""
 
     def __init__(self, config: FixedPolicyConfig = FixedPolicyConfig()) -> None:
         self.config = config
@@ -98,17 +147,94 @@ class FixedThresholdPolicy:
             else:
                 action, route = Action.AUTO_EXECUTE, "within_fixed_threshold"
             decisions.append({
-                "transaction_id": row["transaction_id"], "action": action.value, "route": route,
-                "risk_cell": "", "initial_budget": self.config.threshold,
-                "effective_budget": self.config.threshold, "projected_utilisation": amount,
-                "utilisation_before": pd.NA, "utilisation_after": pd.NA,
-                "tightening_active_before": False, "tightening_triggered_after": False,
+                "transaction_id": row["transaction_id"],
+                "action": action.value,
+                "route": route,
+                "risk_cell": "",
+                "initial_budget": self.config.threshold,
+                "effective_budget": self.config.threshold,
+                "projected_utilisation": amount,
+                "utilisation_before": pd.NA,
+                "utilisation_after": pd.NA,
+                "tightening_active_before": False,
+                "tightening_triggered_after": False,
             })
         return pd.DataFrame(decisions, columns=DECISION_COLUMNS)
 
 
+def _run_cumulative_policy(
+    transactions: pd.DataFrame,
+    initial_budget_for: Callable[[str], float],
+    *,
+    post_error_multiplier: float = 1.0,
+    enable_tightening: bool = False,
+) -> pd.DataFrame:
+    """Apply the shared cumulative accounting rules transparently."""
+
+    _validate_policy_input(transactions)
+    utilisation: dict[tuple[str, ...], float] = {}
+    tightened_scopes: set[tuple[str, str]] = set()
+    decisions: list[dict[str, object]] = []
+
+    for record in transactions.itertuples(index=False):
+        row = record._asdict()
+        entity = str(row["entity"])
+        cell = _risk_cell(row)
+        scope = (entity, str(row["workflow"]))
+        tightening_active = enable_tightening and scope in tightened_scopes
+        initial_budget = initial_budget_for(entity)
+        effective_budget = initial_budget * (post_error_multiplier if tightening_active else 1.0)
+        before = utilisation.get(cell, 0.0)
+        amount = float(row["amount"])
+        projected = before + amount
+        override = _qualitative_override(str(row["qualitative_flag"]))
+
+        if override is not None:
+            action, route, after = override, f"qualitative_override:{row['qualitative_flag']}", before
+        elif projected > effective_budget:
+            action, route, after = Action.INDEPENDENT_REVIEW, "projected_usage_above_budget", before
+        else:
+            action, route, after = Action.AUTO_EXECUTE, "within_cumulative_budget", projected
+            utilisation[cell] = after
+
+        trigger = (
+            enable_tightening
+            and bool(row["confirmed_control_error"])
+            and post_error_multiplier < 1.0
+        )
+        if trigger:
+            tightened_scopes.add(scope)
+        decisions.append({
+            "transaction_id": row["transaction_id"],
+            "action": action.value,
+            "route": route,
+            "risk_cell": "|".join(cell),
+            "initial_budget": initial_budget,
+            "effective_budget": effective_budget,
+            "projected_utilisation": projected,
+            "utilisation_before": before,
+            "utilisation_after": after,
+            "tightening_active_before": tightening_active,
+            "tightening_triggered_after": trigger,
+        })
+
+    return pd.DataFrame(decisions, columns=DECISION_COLUMNS)
+
+
+class CumulativeCapPolicy:
+    """Stateful uniform cap without entity calibration or error tightening."""
+
+    def __init__(self, config: CumulativeCapConfig = CumulativeCapConfig()) -> None:
+        self.config = config
+
+    def run(self, transactions: pd.DataFrame) -> pd.DataFrame:
+        """Apply one cumulative cap to every entity and risk cell."""
+
+        return _run_cumulative_policy(transactions, lambda _entity: self.config.cap)
+
+
 class MCABPolicy:
-    """Stateful authority budget with prospective confirmed-error tightening."""
+    """Entity-calibrated cumulative budget with configurable tightening."""
 
     def __init__(self, config: MCABConfig = MCABConfig()) -> None:
         self.config = config
@@ -116,41 +242,9 @@ class MCABPolicy:
     def run(self, transactions: pd.DataFrame) -> pd.DataFrame:
         """Apply MCAB sequentially; a new run always starts with empty state."""
 
-        _validate_policy_input(transactions)
-        utilisation: dict[tuple[str, str, str, str], float] = {}
-        tightened_scopes: set[tuple[str, str]] = set()
-        decisions: list[dict[str, object]] = []
-
-        for record in transactions.itertuples(index=False):
-            row = record._asdict()
-            cell = (str(row["entity"]), str(row["reporting_period"]), str(row["workflow"]), str(row["account"]))
-            scope = (str(row["entity"]), str(row["workflow"]))
-            tightening_active = scope in tightened_scopes
-            multiplier = self.config.post_error_multiplier if tightening_active else 1.0
-            budget = self.config.initial_budget * multiplier
-            before = utilisation.get(cell, 0.0)
-            amount = float(row["amount"])
-            projected = before + amount
-            override = _qualitative_override(str(row["qualitative_flag"]))
-
-            if override is not None:
-                action, route, after = override, f"qualitative_override:{row['qualitative_flag']}", before
-            elif projected > budget:
-                action, route, after = Action.INDEPENDENT_REVIEW, "projected_usage_above_budget", before
-            else:
-                action, route, after = Action.AUTO_EXECUTE, "within_cumulative_budget", projected
-                utilisation[cell] = after
-
-            trigger = bool(row["confirmed_control_error"]) and self.config.post_error_multiplier < 1.0
-            if trigger:
-                tightened_scopes.add(scope)
-            decisions.append({
-                "transaction_id": row["transaction_id"], "action": action.value, "route": route,
-                "risk_cell": "|".join(cell), "initial_budget": self.config.initial_budget,
-                "effective_budget": budget, "projected_utilisation": projected,
-                "utilisation_before": before, "utilisation_after": after,
-                "tightening_active_before": tightening_active,
-                "tightening_triggered_after": trigger,
-            })
-
-        return pd.DataFrame(decisions, columns=DECISION_COLUMNS)
+        return _run_cumulative_policy(
+            transactions,
+            self.config.initial_budget_for,
+            post_error_multiplier=self.config.post_error_multiplier,
+            enable_tightening=self.config.post_error_multiplier < 1.0,
+        )

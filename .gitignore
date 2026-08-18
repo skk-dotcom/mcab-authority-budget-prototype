@@ -1,0 +1,21 @@
+# Local Python environments and installer caches
+.venv*/
+.pip-cache/
+.tmp/
+
+# Python caches and build products
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+build/
+dist/
+*.egg-info/
+.matplotlib/
+
+# Editor and operating-system files
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db

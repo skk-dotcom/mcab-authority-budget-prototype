@@ -1,13 +1,17 @@
 """Evaluation, decomposition, chart, and generated-output tests."""
 
+from fractions import Fraction
 from pathlib import Path
 from shutil import copyfile
 
 import pandas as pd
 from matplotlib import image as mpimg
+from matplotlib import pyplot as plt
 
 from mcab_prototype.domain import POLICY_VISIBLE_COLUMNS
 from mcab_prototype.evaluate import (
+    ENTITY_ORDER,
+    POLICY_LABELS,
     POLICY_ORDER,
     action_confusion,
     apply_policies,
@@ -22,6 +26,7 @@ from mcab_prototype.evaluate import (
 )
 from mcab_prototype.generate_data import generate_transactions
 from mcab_prototype.run_demo import run_demo
+from mcab_prototype.supplementary import exact_exposure, format_ratio, supplementary_policy_metrics
 
 
 def test_policy_interface_excludes_oracle_and_scenario_metadata() -> None:
@@ -104,6 +109,80 @@ def test_entity_comparison_has_every_policy_and_entity() -> None:
     assert comparison.groupby("entity")["policy"].nunique().eq(4).all()
 
 
+def test_entity_exposure_table_is_exact_and_shared_by_public_documents() -> None:
+    root = Path(__file__).resolve().parents[1]
+    decisions = apply_policies(generate_transactions())
+    expected_exact = {
+        "fixed": (Fraction(2777, 10_000), Fraction(2777, 10_000), Fraction(2777, 10_000)),
+        "uniform_cap": (Fraction(2777, 10_000), Fraction(409, 5_000), Fraction(31, 2_500)),
+        "mcab_no_tightening": (Fraction(409, 5_000), Fraction(409, 5_000), Fraction(3493, 10_000)),
+        "mcab_full": (Fraction(143, 5_000), Fraction(143, 5_000), Fraction(2961, 10_000)),
+    }
+    table_rows = []
+    for policy in POLICY_ORDER:
+        exposure = exact_exposure(decisions, policy)
+        ratios = tuple(exposure.entity_ratios[entity] for entity in ENTITY_ORDER)
+        assert ratios == expected_exact[policy]
+        table_rows.append(
+            f"| {POLICY_LABELS[policy]} | "
+            + " | ".join(format_ratio(ratio) for ratio in ratios)
+            + " |"
+        )
+    expected_table = "\n".join([
+        "| Policy | SMALL | REFERENCE | LARGE |",
+        "|---|---|---|---|",
+        *table_rows,
+    ])
+    uniform_ratio_text = ", ".join(
+        format_ratio(ratio) for ratio in expected_exact["uniform_cap"][:2]
+    ) + f" and {format_ratio(expected_exact['uniform_cap'][2])}"
+
+    readme = (root / "README.md").read_text(encoding="utf-8")
+    summary = (root / "outputs" / "results_summary.md").read_text(encoding="utf-8")
+    assert expected_table in readme and expected_table in summary
+    expected_interpretation = (
+        "the uniform cap’s entity-level exposure ratio falls from SMALL to LARGE: "
+        f"{uniform_ratio_text}."
+    )
+    assert expected_interpretation in readme and expected_interpretation in summary
+    readme_section = readme[
+        readme.index("### Entity-level distribution behind the aggregate"):
+        readme.index("### Uniform cap and Full MCAB: mixed repository-level measures")
+    ].strip()
+    summary_section = summary[
+        summary.index("## Entity-level distribution behind the aggregate"):
+        summary.index("## Uniform cap and Full MCAB: mixed repository-level measures")
+    ].strip()
+    assert readme_section.replace("### ", "## ", 1) == summary_section
+    assert "Illustrative comparison under authored aggregation scenarios" not in readme
+    assert "## Illustrative comparison under authored scenarios" in readme
+    assert "Fixed threshold = Uniform cumulative cap < Full MCAB < MCAB no tightening" in readme
+
+
+def test_small_fixed_and_uniform_failure_evidence_matches_narrow_explanation() -> None:
+    decisions = apply_policies(generate_transactions())
+    small = decisions[decisions["entity"].eq("ENTITY_SMALL")]
+
+    def evidence(policy: str) -> pd.DataFrame:
+        failure = (
+            small[f"{policy}_action"].eq("AUTO_EXECUTE")
+            & small["oracle_required_action"].ne("AUTO_EXECUTE")
+        )
+        rows = small.loc[
+            failure,
+            ["transaction_id", "amount", "oracle_required_action", f"{policy}_action"],
+        ].copy()
+        return rows.rename(columns={f"{policy}_action": "policy_action"}).reset_index(drop=True)
+
+    fixed = evidence("fixed")
+    uniform = evidence("uniform_cap")
+    pd.testing.assert_frame_equal(fixed, uniform)
+    assert len(fixed) == 18
+    assert fixed["amount"].sum() == 69_425
+    assert set(fixed["oracle_required_action"]) == {"INDEPENDENT_REVIEW"}
+    assert set(fixed["policy_action"]) == {"AUTO_EXECUTE"}
+
+
 def test_sensitivity_uses_only_predeclared_grids() -> None:
     sensitivity = sensitivity_analysis(generate_transactions())
     assert set(sensitivity["analysis"]) == {
@@ -130,16 +209,43 @@ def test_action_confusion_preserves_three_action_severity_for_four_policies() ->
     assert (confusion.groupby("policy")["count"].sum() == len(decisions)).all()
 
 
-def test_chart_uses_validated_source_values_and_renders_portably(tmp_path: Path) -> None:
-    metrics = compare_policies(apply_policies(generate_transactions()))
-    source = chart_source_values(metrics)
-    assert source["policy"].tolist() == ["fixed", "uniform_cap", "mcab_full"]
-    assert source["label"].tolist() == ["Fixed threshold", "Uniform cumulative cap", "Full MCAB"]
+def test_chart_uses_validated_source_values_and_renders_portably(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    decisions = apply_policies(generate_transactions())
+    metrics = compare_policies(decisions)
+    supplementary = supplementary_policy_metrics(decisions)
+    source = chart_source_values(metrics, supplementary)
+    assert source["policy"].tolist() == list(POLICY_ORDER)
+    assert source["label"].tolist() == [
+        "Fixed threshold",
+        "Uniform cumulative cap",
+        "MCAB no tightening",
+        "Full MCAB",
+    ]
     for column in ("overall_failure_incidence_pct", "unauthorised_economic_exposure", "non_autonomous_intervention_pct"):
-        expected = metrics.set_index("policy").loc[source["policy"], column].reset_index(drop=True)
+        expected = metrics.set_index("policy").loc[list(POLICY_ORDER), column].reset_index(drop=True)
         pd.testing.assert_series_equal(source[column], expected, check_names=False)
+    expected_scale = supplementary.set_index("policy").loc[
+        list(POLICY_ORDER), "anchor_normalised_exposure"
+    ].reset_index(drop=True)
+    pd.testing.assert_series_equal(source["anchor_normalised_exposure"], expected_scale, check_names=False)
+    subplot_shape: dict[str, tuple[int, int]] = {}
+    captured_figures = []
+    original_subplots = plt.subplots
+
+    def record_subplots(rows: int, columns: int, **kwargs):
+        subplot_shape["value"] = (rows, columns)
+        figure, axes = original_subplots(rows, columns, **kwargs)
+        captured_figures.append(figure)
+        return figure, axes
+
+    monkeypatch.setattr(plt, "subplots", record_subplots)
     chart = tmp_path / "comparison.png"
-    save_comparison_chart(metrics, chart)
+    save_comparison_chart(metrics, supplementary, chart)
+    assert subplot_shape["value"] == (1, 4)
+    assert captured_figures[0]._suptitle.get_text() == "Illustrative comparison under authored scenarios"
     image = mpimg.imread(chart)
     assert chart.stat().st_size > 10_000
     assert image.shape[0] >= 500 and image.shape[1] >= 1_500
@@ -158,6 +264,9 @@ def test_demo_writes_complete_reconciled_outputs(tmp_path: Path) -> None:
         tmp_path / "outputs" / "mechanism_decomposition.csv",
         tmp_path / "outputs" / "sensitivity_analysis.csv",
         tmp_path / "outputs" / "action_confusion.csv",
+        tmp_path / "outputs" / "supplementary_policy_metrics.csv",
+        tmp_path / "outputs" / "exposure_difference_decomposition.csv",
+        tmp_path / "outputs" / "oracle_sensitivity_analysis.csv",
         tmp_path / "outputs" / "results_summary.md",
     }
     assert metrics_path.is_file() and chart_path.is_file()
@@ -168,9 +277,18 @@ def test_demo_writes_complete_reconciled_outputs(tmp_path: Path) -> None:
         tmp_path / "outputs" / "policy_entity_comparison.csv",
         tmp_path / "outputs" / "mechanism_decomposition.csv",
         tmp_path / "outputs" / "action_confusion.csv",
+        tmp_path / "outputs" / "supplementary_policy_metrics.csv",
+        tmp_path / "outputs" / "exposure_difference_decomposition.csv",
+        tmp_path / "outputs" / "oracle_sensitivity_analysis.csv",
     )
     assert (tmp_path / "outputs" / "results_summary.md").read_text(encoding="utf-8") == expected_summary
-    assert readme_primary_results_text(metrics_path) in (tmp_path / "README.md").read_text(encoding="utf-8")
+    assert readme_primary_results_text(
+        tmp_path / "outputs" / "policy_decisions.csv",
+        metrics_path,
+        tmp_path / "outputs" / "supplementary_policy_metrics.csv",
+        tmp_path / "outputs" / "exposure_difference_decomposition.csv",
+        tmp_path / "outputs" / "oracle_sensitivity_analysis.csv",
+    ) in (tmp_path / "README.md").read_text(encoding="utf-8")
 
 
 def test_checked_in_public_results_match_current_csv_outputs() -> None:
@@ -181,9 +299,18 @@ def test_checked_in_public_results_match_current_csv_outputs() -> None:
         root / "outputs" / "policy_entity_comparison.csv",
         root / "outputs" / "mechanism_decomposition.csv",
         root / "outputs" / "action_confusion.csv",
+        root / "outputs" / "supplementary_policy_metrics.csv",
+        root / "outputs" / "exposure_difference_decomposition.csv",
+        root / "outputs" / "oracle_sensitivity_analysis.csv",
     )
     assert (root / "outputs" / "results_summary.md").read_text(encoding="utf-8") == expected
-    assert readme_primary_results_text(root / "outputs" / "policy_comparison.csv") in (
+    assert readme_primary_results_text(
+        root / "outputs" / "policy_decisions.csv",
+        root / "outputs" / "policy_comparison.csv",
+        root / "outputs" / "supplementary_policy_metrics.csv",
+        root / "outputs" / "exposure_difference_decomposition.csv",
+        root / "outputs" / "oracle_sensitivity_analysis.csv",
+    ) in (
         root / "README.md"
     ).read_text(encoding="utf-8")
 
@@ -205,6 +332,9 @@ def test_deterministic_csv_and_markdown_reruns(tmp_path: Path) -> None:
         "outputs/mechanism_decomposition.csv",
         "outputs/sensitivity_analysis.csv",
         "outputs/action_confusion.csv",
+        "outputs/supplementary_policy_metrics.csv",
+        "outputs/exposure_difference_decomposition.csv",
+        "outputs/oracle_sensitivity_analysis.csv",
         "outputs/results_summary.md",
         "README.md",
     ]

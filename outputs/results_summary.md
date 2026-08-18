@@ -15,6 +15,17 @@ Overall failure incidence uses all transactions as its denominator. Conditional 
 
 The exposure measure is gross transaction amount associated with missed escalations. It is an authority-exposure proxy, not realised financial loss.
 
+## Supplementary scale-relative exposure
+
+| Policy | Summed anchor equivalents | SMALL ratio | REFERENCE ratio | LARGE ratio | Maximum ratio |
+|---|---|---|---|---|---|
+| Fixed threshold | 0.8331 | 0.2777 | 0.2777 | 0.2777 | 0.2777 |
+| Uniform cumulative cap | 0.3719 | 0.2777 | 0.0818 | 0.0124 | 0.2777 |
+| MCAB no tightening | 0.5129 | 0.0818 | 0.0818 | 0.3493 | 0.3493 |
+| Full MCAB | 0.3533 | 0.0286 | 0.0286 | 0.2961 | 0.2961 |
+
+Summed anchor equivalents are dimensionless and may exceed 1.0. They reflect both failure incidence and relative failure size, while the maximum is the largest fraction of a single entity's authored anchor. Neither is realised loss, audit materiality, or a validated loss metric.
+
 ## Secondary outcomes
 
 | Policy | False escalations | Aggregation failures | Qualitative cases correctly escalated |
@@ -54,6 +65,147 @@ The qualitative denominator contains 15 qualitative-risk rows plus 3 confirmed-e
 | Prospective error tightening | ALL | MCAB no tightening → Full MCAB | 30 | 15 → 3 | A$114,800 → A$21,700 | 9 → 21 |
 
 Mechanism rows use only the prespecified scenario subsets. Repository-level differences above are descriptive and are not treated as additive mechanism effects.
+
+## Uniform-cap versus Full-MCAB absolute-dollar decomposition
+
+| Dimension | Group | Uniform failures | Uniform exposure | Full failures | Full exposure | Full − Uniform exposure |
+|---|---|---|---|---|---|---|
+| entity | ENTITY_LARGE | 1 | A$12,400 | 6 | A$296,100 | +A$283,700 |
+| entity | ENTITY_REFERENCE | 6 | A$40,900 | 2 | A$14,300 | −A$26,600 |
+| entity | ENTITY_SMALL | 18 | A$69,425 | 2 | A$7,150 | −A$62,275 |
+| entity | TOTAL | 25 | A$122,725 | 10 | A$317,550 | +A$194,825 |
+| scenario_type | aggregation_pressure | 11 | A$50,775 | 3 | A$28,350 | −A$22,425 |
+| scenario_type | isolated_significance | 0 | A$0 | 4 | A$267,500 | +A$267,500 |
+| scenario_type | post_error_accumulation | 14 | A$71,950 | 3 | A$21,700 | −A$50,250 |
+| scenario_type | TOTAL | 25 | A$122,725 | 10 | A$317,550 | +A$194,825 |
+| error_status | post_error | 14 | A$71,950 | 3 | A$21,700 | −A$50,250 |
+| error_status | pre_or_unaffected | 11 | A$50,775 | 7 | A$295,850 | +A$245,075 |
+| error_status | TOTAL | 25 | A$122,725 | 10 | A$317,550 | +A$194,825 |
+| workflow | journal_entry_month_end_close | 19 | A$94,475 | 5 | A$163,200 | +A$68,725 |
+| workflow | procure_to_pay | 6 | A$28,250 | 5 | A$154,350 | +A$126,100 |
+| workflow | TOTAL | 25 | A$122,725 | 10 | A$317,550 | +A$194,825 |
+
+Each dimension is a separate partition and reconciles to the same repository-level totals. Rows are existing absolute-dollar measures, not anchor-normalised results.
+
+## Oracle-recurrence sensitivity
+
+| Configuration | Policy | Oracle escalations | Conditional misses | False escalations | A$ exposure | Anchor equivalents | Maximum ratio | Review/Block/Combined |
+|---|---|---|---|---|---|---|---|---|
+| 4/3 | Fixed threshold | 96/270 | 66/96 (68.75%) | 0/174 (0.00%) | A$605,675 | 1.0383 | 0.3461 | 21/9/30 |
+| 4/3 | Uniform cumulative cap | 96/270 | 33/96 (34.38%) | 1/174 (0.57%) | A$174,025 | 0.5087 | 0.3461 | 55/9/64 |
+| 4/3 | MCAB no tightening | 96/270 | 34/96 (35.42%) | 0/174 (0.00%) | A$530,350 | 0.7181 | 0.4177 | 53/9/62 |
+| 4/3 | Full MCAB | 96/270 | 22/96 (22.92%) | 0/174 (0.00%) | A$437,250 | 0.5585 | 0.3645 | 65/9/74 |
+| 6/3 | Fixed threshold | 84/270 | 54/84 (64.29%) | 0/186 (0.00%) | A$485,975 | 0.8331 | 0.2777 | 21/9/30 |
+| 6/3 | Uniform cumulative cap | 84/270 | 25/84 (29.76%) | 5/186 (2.69%) | A$122,725 | 0.3719 | 0.2777 | 55/9/64 |
+| 6/3 | MCAB no tightening | 84/270 | 22/84 (26.19%) | 0/186 (0.00%) | A$410,650 | 0.5129 | 0.3493 | 53/9/62 |
+| 6/3 | Full MCAB | 84/270 | 10/84 (11.90%) | 0/186 (0.00%) | A$317,550 | 0.3533 | 0.2961 | 65/9/74 |
+| 8/3 | Fixed threshold | 72/270 | 42/72 (58.33%) | 0/198 (0.00%) | A$365,575 | 0.6267 | 0.2089 | 21/9/30 |
+| 8/3 | Uniform cumulative cap | 72/270 | 20/72 (27.78%) | 12/198 (6.06%) | A$97,425 | 0.2869 | 0.2089 | 55/9/64 |
+| 8/3 | MCAB no tightening | 72/270 | 19/72 (26.39%) | 9/198 (4.55%) | A$382,300 | 0.4643 | 0.3331 | 53/9/62 |
+| 8/3 | Full MCAB | 72/270 | 7/72 (9.72%) | 9/198 (4.55%) | A$289,200 | 0.3047 | 0.2799 | 65/9/74 |
+| 6/2 | Fixed threshold | 87/270 | 57/87 (65.52%) | 0/183 (0.00%) | A$510,475 | 0.8751 | 0.2917 | 21/9/30 |
+| 6/2 | Uniform cumulative cap | 87/270 | 28/87 (32.18%) | 5/183 (2.73%) | A$147,225 | 0.4139 | 0.2917 | 55/9/64 |
+| 6/2 | MCAB no tightening | 87/270 | 25/87 (28.74%) | 0/183 (0.00%) | A$435,150 | 0.5549 | 0.3633 | 53/9/62 |
+| 6/2 | Full MCAB | 87/270 | 13/87 (14.94%) | 0/183 (0.00%) | A$342,050 | 0.3953 | 0.3101 | 65/9/74 |
+| 6/4 | Fixed threshold | 81/270 | 51/81 (62.96%) | 0/189 (0.00%) | A$464,275 | 0.7959 | 0.2653 | 21/9/30 |
+| 6/4 | Uniform cumulative cap | 81/270 | 22/81 (27.16%) | 5/189 (2.65%) | A$101,025 | 0.3347 | 0.2653 | 55/9/64 |
+| 6/4 | MCAB no tightening | 81/270 | 19/81 (23.46%) | 0/189 (0.00%) | A$388,950 | 0.4757 | 0.3369 | 53/9/62 |
+| 6/4 | Full MCAB | 81/270 | 7/81 (8.64%) | 0/189 (0.00%) | A$295,850 | 0.3161 | 0.2837 | 65/9/74 |
+
+Oracle configurations are written as pre-error/post-error review recurrences. Denominators change when oracle labels change, so rate levels are not directly comparable across configurations; ordering and trade-offs are assessed within each authored configuration.
+
+## Repository-level calibration contrast
+
+| Repository-level measure | Uniform cap | MCAB no tightening | Observed direction |
+|---|---|---|---|
+| Absolute-dollar exposure | A$122,725 | A$410,650 | Higher under no tightening |
+| Summed anchor-normalised exposure | 0.3719 | 0.5129 | Higher under no tightening |
+| Maximum entity-anchor ratio | 0.2777 | 0.3493 | Higher under no tightening |
+| Conditional misses | 25/84 (29.76%) | 22/84 (26.19%) | Lower under no tightening |
+
+Calibration Branch B: MCAB without tightening does not reduce summed anchor-normalised exposure relative to the uniform cap. The calibration step therefore does not favour MCAB on this supplementary measure, and the observed result is retained without changing entity anchors, scenario amounts or policy parameters.
+
+On matched pre-error aggregation rows, summed anchor-normalised exposure is 0.1869 under the uniform cap and 0.0486 under MCAB no tightening. These prespecified mechanism-subset values are reported separately and are not inputs to the repository-level branch label.
+
+In this authored dataset, entity-relative calibration improves the matched aggregation subset while weakening control over the isolated-significance vignettes. Its repository-level result therefore depends on the authored mixture of cumulative-risk and isolated-transaction scenarios.
+
+Calibration alone slightly reduces conditional misses but increases absolute-dollar exposure, summed anchor-normalised exposure, and the maximum entity-anchor ratio at repository level. It performs substantially better on the matched aggregation subset; the repository-level exposure result is worse because that subset excludes isolated-significance cases.
+
+## Entity-level distribution behind the aggregate
+
+Each cell is entity consequential-failure exposure divided by that entity's authored anchor.
+
+| Policy | SMALL | REFERENCE | LARGE |
+|---|---|---|---|
+| Fixed threshold | 0.2777 | 0.2777 | 0.2777 |
+| Uniform cumulative cap | 0.2777 | 0.0818 | 0.0124 |
+| MCAB no tightening | 0.0818 | 0.0818 | 0.3493 |
+| Full MCAB | 0.0286 | 0.0286 | 0.2961 |
+
+In this authored construction, the uniform cap’s entity-level exposure ratio falls from SMALL to LARGE: 0.2777, 0.0818 and 0.0124. Relative to the uniform cap, MCAB without tightening lowers the SMALL ratio, leaves REFERENCE unchanged and raises LARGE; Full MCAB lowers SMALL and REFERENCE but raises LARGE.
+
+The summed MCAB indices are therefore heavily influenced by LARGE isolated-significance exposure and conceal this cross-entity redistribution. These patterns reflect the authored scenarios, anchors and risk composition; they are not evidence of monotonic behaviour across real organisations.
+
+For SMALL, the Fixed and Uniform conditions have the same 18 consequential-failure transaction IDs and the same A$69,425 failed exposure; the oracle requires `INDEPENDENT_REVIEW` and both policies choose `AUTO_EXECUTE` on those failed rows. The A$50,000 uniform cumulative cap therefore did not reduce SMALL consequential-failure exposure relative to the fixed policy in this authored dataset. This does not imply identical behaviour elsewhere or across all actions.
+
+This distribution motivates future research on layered per-transaction, cumulative risk-cell, and cross-entity or group-level authority limits. It does not establish or professionally prescribe such a hierarchy.
+
+## Uniform cap and Full MCAB: mixed repository-level measures
+
+| Measure | Uniform cap | Full MCAB | Lower observed value |
+|---|---|---|---|
+| Consequential failures | 25/270 | 10/270 | Full MCAB |
+| Summed anchor-normalised exposure | 0.3719 | 0.3533 | Full MCAB |
+| Absolute-dollar exposure | A$122,725 | A$317,550 | Uniform cap |
+| Maximum entity-anchor ratio | 0.2777 | 0.2961 | Uniform cap |
+| Combined intervention | 64/270 (23.70%) | 74/270 (27.41%) | Uniform cap |
+
+“Lower observed value” is descriptive and is not a policy-winner designation. These measures are not equally weighted and do not form a composite score.
+
+The summed-ratio difference is 0.0186, approximately 5.0% below the uniform-cap value. Full MCAB exchanges fewer misses and slightly lower summed relative exposure for higher gross-dollar exposure, a higher worst-entity ratio, and more intervention. Overall Branch A reflects the combined Full MCAB design and must not be attributed to calibration alone.
+
+Overall Branch A: Full MCAB has lower summed anchor-normalised exposure than the uniform cap while retaining higher absolute-dollar exposure. The measures diverge because one reports gross dollars and the other scales each consequential failure to its entity’s authored anchor. This divergence is consistent with the intended operation of entity-relative calibration, but it is not evidence that MCAB is effective or generally superior.
+
+## Mechanism-subset and isolated-significance context
+
+Four isolated-significance vignettes in `ENTITY_LARGE` contribute A$267,500 under MCAB no tightening and A$267,500 under Full MCAB, compared with A$0 under the uniform cap. They sit outside the prespecified mechanism-identification subsets.
+
+Aggregation-pressure exposure is A$22,425 lower under Full MCAB, and post-error-accumulation exposure is A$50,250 lower. Mechanism claims should therefore be read from decomposition and ablation contrasts rather than inferred from the headline table alone.
+
+Within the entity-calibrated post-error subset, summed anchor-normalised exposure is 0.1968 without tightening and 0.0372 under Full MCAB. Tightening Branch A: Full MCAB has lower summed anchor-normalised exposure than MCAB without tightening. Within the authored post-error sequences, prospective tightening is associated descriptively with lower scale-relative exposure and a different intervention burden. This is not causal evidence that tightening is effective outside the constructed scenarios.
+
+## Oracle-recurrence ordering
+
+| Configuration | Exact conditional-miss ordering (lowest to highest) |
+|---|---|
+| 4/3 | Full MCAB < Uniform cumulative cap < MCAB no tightening < Fixed threshold |
+| 6/3 | Full MCAB < MCAB no tightening < Uniform cumulative cap < Fixed threshold |
+| 8/3 | Full MCAB < MCAB no tightening < Uniform cumulative cap < Fixed threshold |
+| 6/2 | Full MCAB < MCAB no tightening < Uniform cumulative cap < Fixed threshold |
+| 6/4 | Full MCAB < MCAB no tightening < Uniform cumulative cap < Fixed threshold |
+
+Sensitivity Branch B: The conditional-miss-rate policy ordering changes under 4/3. The base-case ordering is therefore conditional on the authored 6/3 recurrence points. This dependence is retained as a limitation and is not resolved by selecting a preferred configuration or adjusting the recurrence grid.
+
+Full MCAB has the lowest conditional-miss fraction in all five authored configurations, but the complete weak ordering changes under `4/3` because the relation between the uniform cap and MCAB no tightening reverses. The Full-MCAB–no-tightening ordering persists across this narrow recurrence grid. This is local sensitivity within one authored dataset, not independent confirmation, robustness, or external validation.
+
+Under `8/3`, false escalations are 12/198 for the uniform cap, 9/198 for MCAB no tightening, and 9/198 for Full MCAB. The higher false-escalation counts under `8/3` arise from relabelling fixed policy interventions against a more permissive oracle configuration, not from any change in policy behaviour.
+
+The identical `0.2777` Fixed-threshold entity ratios are a product of proportional scenario scaling and proportional entity anchors, not evidence of empirical invariance across differently sized organisations. This matched construction makes the cross-entity comparison cleaner than would ordinarily be expected in operational data.
+
+## Incomplete factorial and future question
+
+| Calibration | No tightening | Tightening |
+|---|---|---|
+| No entity calibration | Uniform cap | Not implemented |
+| Entity calibration | MCAB no tightening | Full MCAB |
+
+The policy ladder is not a complete 2×2 factorial because it contains no uniform-cap-with-tightening condition. The no-tightening–Full-MCAB contrast therefore measures prospective tightening only within entity-calibrated conditions and cannot determine whether the observed tightening result requires, interacts with or generalises beyond entity calibration.
+
+The entity-calibration step does not improve repository-level absolute exposure, summed anchor-normalised exposure, or maximum entity-anchor exposure in this authored dataset; it slightly improves conditional misses and substantially improves the matched aggregation subset. Adding prospective tightening within the entity-calibrated conditions reduces repository-level summed exposure and failures relative to MCAB no tightening. Because uniform-cap-with-tightening is absent, the design cannot determine whether this result depends on calibration or would also occur under a uniform cap. The mechanism decomposition sharpens a future question rather than resolving it.
+
+The mixed results motivate a sharper future question: under what risk compositions does entity-relative authority improve control, and what hierarchy of per-transaction, cumulative risk-cell and cross-entity constraints is required to prevent gains in aggregation control from weakening isolated-transaction control?
+
+Under the maximum entity-anchor exposure ratio, the ranking across the four conditions from lowest to highest is Fixed threshold = Uniform cumulative cap < Full MCAB < MCAB no tightening. The highest single-entity figure is 0.3493 (34.9300%) for MCAB no tightening–ENTITY_LARGE, meaning that this fraction of that entity’s authored anchor was exposed without independent review.
 
 ## Action confusion counts
 

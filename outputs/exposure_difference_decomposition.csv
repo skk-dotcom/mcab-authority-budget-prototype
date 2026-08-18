@@ -1,0 +1,15 @@
+dimension,group,uniform_failure_count,uniform_absolute_dollar_exposure,full_mcab_failure_count,full_mcab_absolute_dollar_exposure,failure_count_difference_full_minus_uniform,exposure_difference_full_minus_uniform
+entity,ENTITY_LARGE,1,12400.000000,6,296100.000000,5,283700.000000
+entity,ENTITY_REFERENCE,6,40900.000000,2,14300.000000,-4,-26600.000000
+entity,ENTITY_SMALL,18,69425.000000,2,7150.000000,-16,-62275.000000
+entity,TOTAL,25,122725.000000,10,317550.000000,-15,194825.000000
+scenario_type,aggregation_pressure,11,50775.000000,3,28350.000000,-8,-22425.000000
+scenario_type,isolated_significance,0,0.000000,4,267500.000000,4,267500.000000
+scenario_type,post_error_accumulation,14,71950.000000,3,21700.000000,-11,-50250.000000
+scenario_type,TOTAL,25,122725.000000,10,317550.000000,-15,194825.000000
+error_status,post_error,14,71950.000000,3,21700.000000,-11,-50250.000000
+error_status,pre_or_unaffected,11,50775.000000,7,295850.000000,-4,245075.000000
+error_status,TOTAL,25,122725.000000,10,317550.000000,-15,194825.000000
+workflow,journal_entry_month_end_close,19,94475.000000,5,163200.000000,-14,68725.000000
+workflow,procure_to_pay,6,28250.000000,5,154350.000000,-1,126100.000000
+workflow,TOTAL,25,122725.000000,10,317550.000000,-15,194825.000000

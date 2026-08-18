@@ -29,6 +29,15 @@ The cumulative risk cell is `(entity, reporting_period, workflow, account, count
 
 The confirmed-error signal means an earlier control error was confirmed immediately before the signal position. Full MCAB decides the signal row under the prior state and tightens only later rows in the affected `(entity, workflow)` scope. Prior utilisation is retained. The other three conditions have no tightening mechanism.
 
+The four conditions are not a complete calibration-by-tightening factorial:
+
+| Calibration | No tightening | Tightening |
+|---|---|---|
+| No entity calibration | Uniform cap | Not implemented |
+| Entity calibration | MCAB no tightening | Full MCAB |
+
+The policy ladder is not a complete 2×2 factorial because it contains no uniform-cap-with-tightening condition. The no-tightening–Full-MCAB contrast therefore measures prospective tightening only within entity-calibrated conditions and cannot determine whether the observed tightening result requires, interacts with or generalises beyond entity calibration.
+
 ## Frozen qualitative mappings
 
 All policies receive the same qualitative flags and treatment-side mapping. The oracle contains a separately authored copy.
@@ -94,11 +103,22 @@ Mechanism comparisons are calculated only on frozen subsets:
 
 Repository-level metrics are reported separately as descriptive results. Their differences are not interpreted as additive mechanism effects.
 
+Canonical supplementary branch labels use exact unrounded repository-level policy metrics. The public pre-declaration did not assign a separate mechanism-subset population to the Calibration or Tightening branches. Matched pre-error aggregation and post-error calculations remain separately reported mechanism-subset findings and cannot replace the repository-level branch inputs.
+
 ## Outcomes
 
 Primary outcomes are overall consequential-failure incidence, conditional miss rate, gross authority-exposure proxy, and separate review/block/intervention burdens. Secondary outcomes are false escalation rate, aggregation-related failures, qualitative cases correctly escalated, entity-level results, and full action confusion counts. Every rate includes its numerator and denominator.
 
 `INDEPENDENT_REVIEW` is adequate escalation for the binary missed-escalation measure when the oracle requires review or blocking because autonomous authority has been removed. The three-action confusion table retains action-severity differences.
+
+Absolute-dollar authority exposure remains a primary outcome. Two supplementary scale-relative descriptions are calculated only for consequential failures:
+
+- summed anchor-normalised exposure is `Σ(abs(amount_i) / entity_anchor_i)` across failed transactions; and
+- each entity ratio divides failed gross amount in that entity by its authored anchor, with the maximum defined as the largest of the three ratios.
+
+Calculations use integer cents and exact rational arithmetic for comparisons. Displayed ratios use four decimal places. Summed anchor equivalents are dimensionless, may exceed `1.0`, and combine failure incidence with relative failure size; an arbitrary total has no natural single-entity interpretation. The maximum ratio is the largest fraction of one synthetic entity's authored anchor exposed without independent review. Neither measure is realised loss, audit materiality, or a validated loss metric, and neither replaces the primary absolute-dollar proxy.
+
+The Uniform-cap versus Full-MCAB absolute-dollar difference is also partitioned by entity, scenario type, pre/post-error status, and workflow. Each partition must reconcile independently to the same repository-level failure counts and exposure totals. This decomposition is descriptive and is not treated as an additive mechanism estimate.
 
 ## Predeclared sensitivity grids
 
@@ -110,12 +130,33 @@ Primary outcomes are overall consequential-failure incidence, conditional miss r
 
 The oracle labels and dataset remain fixed throughout. Sensitivity results are descriptive and are not used to select a preferred condition retrospectively.
 
+A separate oracle-recurrence sensitivity holds all transaction data and policy decisions fixed while re-adjudicating the authored ground truth at `4/3`, `6/3`, `8/3`, `6/2`, and `6/4`; `6/3` remains the sole base case. Every configuration reports rate numerators and denominators, absolute-dollar exposure, supplementary ratios, and intervention counts for all four policies. Policy intervention counts must remain invariant. Because oracle-required and oracle-auto denominators change, rate levels are not directly comparable across configurations; only within-configuration ordering and trade-offs are described. Exact conditional-miss fractions determine weak ordering, including ties.
+
+Implementation isolation, monetary independence, and scenario-design coupling are distinct. The oracle imports no policy code or configuration and receives no policy parameters or decisions. Parametric coupling between the treatment's monetary logic and the oracle's recurrence rule is relocated from the oracle to the authored scenario templates rather than eliminated. Recurrences six and three are demonstration choices rather than values derived from ASA 240, ASA 320, legislation, or professional protocol.
+
+## Revision 2 workflow boundary
+
+The supplementary definitions, recurrence grid, exact branch rules, and alternative interpretations were publicly committed before formal supplementary computation. The process was not blinded or formally preregistered: the original dollar results, entity anchors, and Phase 1 decomposition made likely directions inferable, and the supplementary metrics were selected after the original results were known. The commit records workflow order but does not make the exercise confirmatory research; residual post hoc metric-selection risk remains.
+
+## Corrected integrated interpretation boundary
+
+In this authored dataset, entity-relative calibration improves the matched aggregation subset while weakening control over the isolated-significance vignettes. At repository level, MCAB no tightening slightly reduces conditional misses but increases absolute-dollar exposure, summed anchor-normalised exposure, and the maximum entity-anchor ratio relative to the uniform cap. Adding prospective tightening within the entity-calibrated conditions reduces repository-level summed exposure and failures relative to MCAB no tightening, but the absent uniform-cap-with-tightening condition prevents attribution of this result to an isolated tightening effect or assessment of a calibration-by-tightening interaction.
+
+The mixed results motivate a sharper future question: under what risk compositions does entity-relative authority improve control, and what hierarchy of per-transaction, cumulative risk-cell and cross-entity constraints is required to prevent gains in aggregation control from weakening isolated-transaction control?
+
+[ASA 600 paragraph 35(a)](https://standards.auasb.gov.au/asa-600-may-2022-0) requires component performance materiality to be lower than group performance materiality to address aggregation risk. This is an audit-planning analogy for investigating entity-relative authority budgets beneath an additional cross-entity constraint; it does not prescribe MCAB, operational approval thresholds, transaction caps, or authority budgets. The proposed hierarchy remains untested.
+
 ## Validity limitations
 
 - The anchors, scale ratios, recurrence counts, scenario composition, and ordering are authored assumptions.
 - Proportional entity scaling and matched scenarios are constructive identification choices, not empirical validation of entity scales or materiality anchors.
+- The identical Fixed-threshold entity ratios arise from proportional scenario scaling and proportional anchors, not empirical invariance across organisation sizes.
 - The oracle is not expert validated and may encode the researcher's control expectations.
+- The oracle and policy remain implementation-separated, but the authored amount templates and recurrence rules retain scenario-design coupling.
 - Cell granularity can fragment exposure that would be consequential at a higher hierarchy.
 - Flags are treated as observed accurately and without cost.
 - Reviewer error, dependence, delay, control cost, strategic adaptation, recovery, and realised financial loss are omitted.
 - One deterministic dataset supports reproducibility but not statistical inference or external validity.
+- Summed anchor equivalents aggregate across entities and depend jointly on failure incidence and relative failure size; the maximum ratio can depend on one entity and a small number of vignettes.
+- Supplementary measures can change the descriptive interpretation without changing the underlying transactions, policy decisions, base oracle labels, or original evidence.
+- The incomplete policy factorial cannot show whether tightening requires, interacts with, or generalises beyond entity calibration.

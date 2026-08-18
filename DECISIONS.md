@@ -201,3 +201,93 @@ The comparison chart uses four separate panels for failure incidence, absolute-d
 The supplementary metrics were selected after the original absolute-dollar results were known. The interpretation branches in this record are publicly committed before formal computation, but the process is not blinded. Public data, entity anchors, and the Phase 1 absolute-dollar decomposition made likely directions inferable. The procedure is not formal preregistration, and the public Git commit records workflow order without making the exercise confirmatory research. Residual post hoc metric-selection risk remains.
 
 The summed index depends jointly on failure incidence and relative failure size, aggregates across entities without a natural single-entity interpretation, and may obscure distributional differences. The maximum ratio depends on one entity and potentially a small number of authored cases. Oracle-sensitivity denominators change across configurations. Recurrence points, templates, scenario coupling, and matched construction remain authored design choices. Supplementary measures may alter interpretation without altering the underlying transactions, decisions, oracle labels, or original evidence.
+
+## D021 — Initial observed Revision 2 branch applications (superseded)
+
+This record preserves the initial subset-scoped branch application for transparency. D022 supersedes its Calibration and Tightening population assignments after corrective review of the public pre-declaration.
+
+Formal supplementary computation began only after the pre-declaration commit `1c4237d5e465092323adeafc19e3578212ca71bb` was pushed. Exact rational values, rather than displayed rounded values, selected the branches:
+
+| Contrast | First exact value | Second exact value | Displayed values | Applied branch |
+|---|---:|---:|---:|---|
+| Overall: Uniform cap → Full MCAB | `3719/10000` | `3533/10000` | `0.3719 → 0.3533` | Overall A |
+| Calibration subset: Uniform cap → MCAB no tightening | `1869/10000` | `243/5000` | `0.1869 → 0.0486` | Calibration A |
+| Post-error subset: MCAB no tightening → Full MCAB | `123/625` | `93/2500` | `0.1968 → 0.0372` | Tightening A |
+
+### Applied Overall Branch A
+
+“Full MCAB has lower summed anchor-normalised exposure than the uniform cap while retaining higher absolute-dollar exposure. The measures diverge because one reports gross dollars and the other scales each consequential failure to its entity’s authored anchor. This divergence is consistent with the intended operation of entity-relative calibration, but it is not evidence that MCAB is effective or generally superior.”
+
+### Applied Calibration Branch A
+
+“MCAB without tightening has lower summed anchor-normalised exposure than the uniform cap. In this authored design, changing from a common cumulative cap to entity-relative budgets changes the allocation of intervention and scale-relative exposure. This descriptive result does not establish the effectiveness or general superiority of entity calibration.”
+
+### Applied Tightening Branch A
+
+“Full MCAB has lower summed anchor-normalised exposure than MCAB without tightening. Within the authored post-error sequences, prospective tightening is associated descriptively with lower scale-relative exposure and a different intervention burden. This is not causal evidence that tightening is effective outside the constructed scenarios.”
+
+### Applied Sensitivity Branch B
+
+Exact conditional-miss weak orderings were:
+
+| Oracle configuration | Exact weak ordering from lowest to highest |
+|---|---|
+| `4/3` | Full MCAB < Uniform cumulative cap < MCAB no tightening < Fixed threshold |
+| `6/3` | Full MCAB < MCAB no tightening < Uniform cumulative cap < Fixed threshold |
+| `8/3` | Full MCAB < MCAB no tightening < Uniform cumulative cap < Fixed threshold |
+| `6/2` | Full MCAB < MCAB no tightening < Uniform cumulative cap < Fixed threshold |
+| `6/4` | Full MCAB < MCAB no tightening < Uniform cumulative cap < Fixed threshold |
+
+“The conditional-miss-rate policy ordering changes under 4/3. The base-case ordering is therefore conditional on the authored 6/3 recurrence points. This dependence is retained as a limitation and is not resolved by selecting a preferred configuration or adjusting the recurrence grid.”
+
+### Completed maximum-ratio statement
+
+“Under the maximum entity-anchor exposure ratio, the ranking across the four conditions from lowest to highest is Fixed threshold = Uniform cumulative cap < Full MCAB < MCAB no tightening. The highest single-entity figure is 0.3493 (34.9300%) for MCAB no tightening–ENTITY_LARGE, meaning that this fraction of that entity’s authored anchor was exposed without independent review.”
+
+## D022 — Corrective branch-population resolution
+
+This decision supersedes the population assignments recorded in D021 without altering the canonical wording in D015. The public pre-declaration defines policy-level anchor-normalised exposure in D012 and labels policy contrasts in D015. Its population language states that “For consequential control failures only, summed anchor-normalised exposure is defined as” the policy-level sum and that “Branch selection uses exact unrounded values.” It does not state that the Calibration or Tightening branch labels use the prespecified mechanism subsets from D007.
+
+“The public pre-declaration defined policy-level anchor-normalised exposure but did not explicitly state a separate comparison population for the calibration and tightening branch labels. The initial implementation applied those labels to prespecified mechanism subsets. To avoid adopting a favourable post hoc scope, the canonical branches are resolved conservatively from repository-level policy metrics, while the prespecified mechanism-subset calculations are reported separately. This resolution does not alter any transaction, policy action, oracle label, parameter, metric value, recurrence grid or canonical branch text.”
+
+Exact repository-level values select the corrected branches:
+
+| Contrast | First exact value | Second exact value | Displayed values | Correct branch |
+|---|---:|---:|---:|---|
+| Overall: Uniform cap → Full MCAB | `3719/10000` | `3533/10000` | `0.3719 → 0.3533` | Overall A |
+| Calibration: Uniform cap → MCAB no tightening | `3719/10000` | `5129/10000` | `0.3719 → 0.5129` | Calibration B |
+| Tightening: MCAB no tightening → Full MCAB | `5129/10000` | `3533/10000` | `0.5129 → 0.3533` | Tightening A |
+
+Sensitivity Branch B remains selected by exact conditional-miss fractions because the weak ordering changes under `4/3`.
+
+The mechanism-subset calculations remain separate descriptive findings:
+
+| Prespecified subset | First exact value | Second exact value | Displayed values |
+|---|---:|---:|---:|
+| Matched pre-error aggregation: Uniform cap → MCAB no tightening | `1869/10000` | `243/5000` | `0.1869 → 0.0486` |
+| Post-error calibrated conditions: MCAB no tightening → Full MCAB | `123/625` | `93/2500` | `0.1968 → 0.0372` |
+
+The applicable Calibration Branch B text remains exactly as pre-declared:
+
+“MCAB without tightening does not reduce summed anchor-normalised exposure relative to the uniform cap. The calibration step therefore does not favour MCAB on this supplementary measure, and the observed result is retained without changing entity anchors, scenario amounts or policy parameters.”
+
+In this authored dataset, entity-relative calibration improves the matched aggregation subset while weakening control over the isolated-significance vignettes. Its repository-level result therefore depends on the authored mixture of cumulative-risk and isolated-transaction scenarios.
+
+## D023 — Incomplete factorial and verified construction effects
+
+The four conditions form an incomplete policy ladder:
+
+| | No tightening | Tightening |
+|---|---|---|
+| No entity calibration | Uniform cap | Not implemented |
+| Entity calibration | MCAB no tightening | Full MCAB |
+
+The policy ladder is not a complete 2×2 factorial because it contains no uniform-cap-with-tightening condition. The no-tightening–Full-MCAB contrast therefore measures prospective tightening only within entity-calibrated conditions and cannot determine whether the observed tightening result requires, interacts with or generalises beyond entity calibration.
+
+Row-level reconciliation confirms that the higher false-escalation counts under `8/3` arise from relabelling fixed policy interventions against a more permissive oracle configuration, not from any change in policy behaviour. Relative to `6/3`, seven uniform-cap interventions and nine interventions in each MCAB condition at pre-error recurrences six or seven change from oracle-required review to oracle-auto. The uniform cap also retains five false escalations already present under `6/3`, producing `12/198`; MCAB no tightening and Full MCAB each produce `9/198`.
+
+The identical `0.2777` Fixed-threshold entity ratios are a product of proportional scenario scaling and proportional entity anchors, not evidence of empirical invariance across differently sized organisations. This matched construction makes the cross-entity comparison cleaner than would ordinarily be expected in operational data. Each entity has the same 18 Fixed-threshold consequential failures at proportionally scaled matched aggregation and post-error positions; gross failed amounts of A$69,425, A$138,850 and A$277,700 scale with anchors of A$250,000, A$500,000 and A$1,000,000.
+
+The mixed results motivate a sharper future question: under what risk compositions does entity-relative authority improve control, and what hierarchy of per-transaction, cumulative risk-cell and cross-entity constraints is required to prevent gains in aggregation control from weakening isolated-transaction control?
+
+ASA 600 requires component performance materiality to be lower than group performance materiality to address aggregation risk. This provides a conceptual accounting analogy for investigating a hierarchy in which entity-relative authority budgets operate beneath an additional cross-entity constraint. It is an audit-planning analogy only: ASA 600 does not prescribe MCAB, operational approval thresholds, transaction caps or authority budgets. The relevant requirement is paragraph 35(a) of the [official AUASB standard](https://standards.auasb.gov.au/asa-600-may-2022-0). The hierarchy remains an untested future-design hypothesis.
